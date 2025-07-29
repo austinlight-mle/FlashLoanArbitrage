@@ -1,9 +1,20 @@
 {
+  "name": "flashloan_arbitrage_bot",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "node app.js"
+  },
   "devDependencies": {
+    "@balancer-labs/v2-interfaces": "^0.4.0",
     "@nomicfoundation/hardhat-toolbox": "^6.1.0",
+    "@openzeppelin/contracts": "^5.4.0",
+    "@uniswap/v3-periphery": "^1.4.4",
     "hardhat": "^2.26.1"
   },
   "dependencies": {
-    "dotenv": "^17.2.1"
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.1",
+    "express": "^5.1.0",
+    "jsonfile": "^6.1.0"
   }
 }
