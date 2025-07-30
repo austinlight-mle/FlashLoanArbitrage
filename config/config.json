@@ -1,7 +1,7 @@
 {
   "PROJECT_SETTINGS": {
     "isLocal": false,
-    "isDeployed": false,
+    "isDeployed": true,
     "CONTRACT_ADDRESS": "0xa0742661B8E4e75b404Ae7522b9Fb4a04351Ec56",
     "PRICE_UNITS": 0,
     "PRICE_DIFFERENCE": 0.5,
@@ -11,6 +11,7 @@
   "tokens": {
     "WETH": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
     "ARB": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+    "USDC": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
     "POOL_FEE": 500
   },
   "UniswapV3": {
