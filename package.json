@@ -12,6 +12,7 @@
     "hardhat": "^2.26.1"
   },
   "dependencies": {
+    "big.js": "^7.0.1",
     "cors": "^2.8.5",
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
