@@ -11,10 +11,10 @@ const { uniswapV3Abi, pancakeswapV3Abi } = require("./abi.js");
 let provider;
 
 if (config.PROJECT_SETTINGS.isLocal) {
-  provider = new ethers.JsonRpcProvider("http://localhost:8545");
+  provider = new ethers.WebSocketProvider("ws://localhost:8545");
 } else {
-  provider = new ethers.JsonRpcProvider(
-    `https://arb-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY}`
+  provider = new ethers.WebSocketProvider(
+    `wss://arb-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY}`
   );
 }
 
