@@ -2,7 +2,14 @@ require("dotenv/config");
 require("./server/index.js");
 
 const config = require("./config/config.json");
-const { getTokenAndContract, getPoolContract, calculatePrice } = require("./utils/helper.js");
+
+const {
+  getTokenAndContract,
+  getPoolContract,
+  calculatePrice,
+  getPoolLiquidity,
+} = require("./utils/helper.js");
+
 const { provider, uniswap, pancakeswap, arbitrageContract } = require("./utils/initialization.js");
 
 const WETH = config.tokens.WETH;
