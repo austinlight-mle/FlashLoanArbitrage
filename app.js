@@ -1,6 +1,9 @@
+const { ethers } = require("ethers");
+
 require("dotenv/config");
 require("./server/index.js");
 
+const Big = require("big.js");
 const config = require("./config/config.json");
 
 const {
@@ -46,7 +49,7 @@ const eventHandler = async (_poolA, _poolB, _tokenA, _tokenB) => {
     isExecuting = true;
 
     const priceDifference = await checkPrice([_poolA, _poolB], _tokenA, _tokenB);
-    const exchangePath = await determineDirection([_poolA, _poolB], priceDifference);
+    const exchangePath = await determineDirection([uniswap, pancakeswap], priceDifference);
 
     if (!exchangePath) {
       console.log(`No Arbitrage Currently Available\n`);
