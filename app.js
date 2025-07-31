@@ -253,9 +253,12 @@ const executeTrade = async (_exchangePath, _tokenA, _tokenB, _amount) => {
     "ETH Balance After": ethers.formatUnits(ethBalanceAfter, 18),
     "ETH Spent (gas)": ethers.formatUnits(ethBalanceDifference.toString(), 18),
     "-": {},
-    [`${_tokenA.name} Balance BEFORE`]: ethers.formatUnits(tokenBalanceBefore, _tokenA.decimals),
-    [`${_tokenA.name} Balance AFTER`]: ethers.formatUnits(tokenBalanceAfter, _tokenA.decimals),
-    [`${_tokenA.name} Gained/Lost`]: ethers.formatUnits(tokenBalanceDifference.toString(), _tokenA.decimals),
+    [`${_tokenA.symbol} Balance BEFORE`]: ethers.formatUnits(tokenBalanceBefore, _tokenA.decimals),
+    [`${_tokenA.symbol} Balance AFTER`]: ethers.formatUnits(tokenBalanceAfter, _tokenA.decimals),
+    [`${_tokenA.symbol} Gained/Lost`]: ethers.formatUnits(
+      tokenBalanceDifference.toString(),
+      _tokenA.decimals
+    ),
     "-": {},
     "Total Gained/Lost": `${ethers.formatUnits(
       (tokenBalanceDifference - ethBalanceDifference).toString(),
