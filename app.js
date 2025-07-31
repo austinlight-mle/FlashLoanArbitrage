@@ -21,9 +21,7 @@ const TOKENS = config[NETWORK].tokens;
 const TOKEN_A = TOKENS[config.PROJECT_SETTINGS.tokens[0]];
 const TOKEN_B = TOKENS[config.PROJECT_SETTINGS.tokens[1]];
 
-const WETH = config.tokens.WETH;
-const ARB = config.tokens.ARB;
-const POOL_FEE = config.tokens.POOL_FEE;
+const POOL_FEE = config[NETWORK].tokens.POOL_FEE;
 
 const UNITS = config.PROJECT_SETTINGS.PRICE_UNITS;
 const PRICE_DIFFERENCE = config.PROJECT_SETTINGS.PRICE_DIFFERENCE;
@@ -33,7 +31,7 @@ const GAS_PRICE = config.PROJECT_SETTINGS.GAS_PRICE;
 const main = async () => {
   console.log("Starting Flash Loan Arbitrage Bot...");
 
-  const { tokenA, tokenB } = await getTokenAndContract(WETH, ARB, provider);
+  const { tokenA, tokenB } = await getTokenAndContract(TOKEN_A, TOKEN_B, provider);
   const poolA = await getPoolContract(uniswap, tokenA.address, tokenB.address, POOL_FEE, provider);
   const poolB = await getPoolContract(pancakeswap, tokenA.address, tokenB.address, POOL_FEE, provider);
 
@@ -195,9 +193,9 @@ const determineProfitability = async (_exchangePath, _tokenA, _tokenB) => {
       "ETH Balance After": ethBalanceAfter,
       "ETH Spent (gas)": estimatedGasCost,
       "-": {},
-      [`${_tokenA.name} Balance BEFORE`]: tokenABalanceBefore,
-      [`${_tokenA.name} Balance AFTER`]: tokenABalanceAfter,
-      [`${_tokenA.name} Gained/Lost`]: tokenABalanceDifference,
+      [`${_tokenA.symbol} Balance BEFORE`]: tokenABalanceBefore,
+      [`${_tokenA.symbol} Balance AFTER`]: tokenABalanceAfter,
+      [`${_tokenA.symbol} Gained/Lost`]: tokenABalanceDifference,
       "-": {},
       "Total Gained/Lost": tokenABalanceDifference - estimatedGasCost,
     };
@@ -259,9 +257,12 @@ const executeTrade = async (_exchangePath, _tokenA, _tokenB, _amount) => {
     "ETH Balance After": ethers.formatUnits(ethBalanceAfter, 18),
     "ETH Spent (gas)": ethers.formatUnits(ethBalanceDifference.toString(), 18),
     "-": {},
-    [`${_tokenA.name} Balance BEFORE`]: ethers.formatUnits(tokenBalanceBefore, _tokenA.decimals),
-    [`${_tokenA.name} Balance AFTER`]: ethers.formatUnits(tokenBalanceAfter, _tokenA.decimals),
-    [`${_tokenA.name} Gained/Lost`]: ethers.formatUnits(tokenBalanceDifference.toString(), _tokenA.decimals),
+    [`${_tokenA.symbol} Balance BEFORE`]: ethers.formatUnits(tokenBalanceBefore, _tokenA.decimals),
+    [`${_tokenA.symbol} Balance AFTER`]: ethers.formatUnits(tokenBalanceAfter, _tokenA.decimals),
+    [`${_tokenA.symbol} Gained/Lost`]: ethers.formatUnits(
+      tokenBalanceDifference.toString(),
+      _tokenA.decimals
+    ),
     "-": {},
     "Total Gained/Lost": `${ethers.formatUnits(
       (tokenBalanceDifference - ethBalanceDifference).toString(),
