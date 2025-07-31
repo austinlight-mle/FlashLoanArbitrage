@@ -15,6 +15,12 @@ const {
 
 const { provider, uniswap, pancakeswap, arbitrageContract } = require("./utils/initialization.js");
 
+const NETWORK = config.PROJECT_SETTINGS.network;
+const TOKENS = config[NETWORK].tokens;
+
+const TOKEN_A = TOKENS[config.PROJECT_SETTINGS.tokens[0]];
+const TOKEN_B = TOKENS[config.PROJECT_SETTINGS.tokens[1]];
+
 const WETH = config.tokens.WETH;
 const ARB = config.tokens.ARB;
 const POOL_FEE = config.tokens.POOL_FEE;
