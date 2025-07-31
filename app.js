@@ -130,10 +130,10 @@ const determineProfitability = async (_exchangePath, _tokenA, _tokenB) => {
 
     // An example of using a percentage of the liquidity
     // BigInt doesn't like decimals, so we use Big.js here
-    const percentage = Big(0.5);
+    const percentage = Big(0.1);
     const minAmount = Big(liquidity[1]).mul(percentage);
 
-    // Figure out how much token0 needed for X amount of token1...
+    // Figure out how much tokenA needed for X amount of tokenB...
     const quoteExactOutputSingleParams = {
       tokenIn: _tokenA.address,
       tokenOut: _tokenB.address,
@@ -189,9 +189,9 @@ const determineProfitability = async (_exchangePath, _tokenA, _tokenB) => {
       "ETH Balance After": ethBalanceAfter,
       "ETH Spent (gas)": estimatedGasCost,
       "-": {},
-      [`${_tokenA.name} Balance BEFORE`]: tokenABalanceBefore,
-      [`${_tokenA.name} Balance AFTER`]: tokenABalanceAfter,
-      [`${_tokenA.name} Gained/Lost`]: tokenABalanceDifference,
+      [`${_tokenA.symbol} Balance BEFORE`]: tokenABalanceBefore,
+      [`${_tokenA.symbol} Balance AFTER`]: tokenABalanceAfter,
+      [`${_tokenA.symbol} Gained/Lost`]: tokenABalanceDifference,
       "-": {},
       "Total Gained/Lost": tokenABalanceDifference - estimatedGasCost,
     };
