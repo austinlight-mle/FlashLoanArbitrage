@@ -87,8 +87,9 @@ const checkPrice = async (_pools, _tokenA, _tokenB) => {
   const priceA = await calculatePrice(_pools[0], _tokenA, _tokenB);
   const priceB = await calculatePrice(_pools[1], _tokenA, _tokenB);
 
-  const fixedPriceA = Number(priceA).toFixed(UNITS);
-  const fixedPriceB = Number(priceB).toFixed(UNITS);
+  const fixedPriceA = Number(priceA);
+  const fixedPriceB = Number(priceB);
+
   const priceDifference = (((fixedPriceA - fixedPriceB) / fixedPriceB) * 100).toFixed(2);
 
   console.log(`Current Block: ${currentBlock}`);

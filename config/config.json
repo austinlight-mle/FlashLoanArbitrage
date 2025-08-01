@@ -19,7 +19,7 @@
     }
   },
   "ethereum": {
-    "Contract": "0x2cBbBAC18d81Ce0D35556e285F3Ef36DFAE8255b",
+    "Contract": "0x5d298afb1bb119a96f7a4a5487c87eee5102c024",
     "tokens": {
       "WETH": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
       "USDC": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
