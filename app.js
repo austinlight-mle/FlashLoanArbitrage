@@ -57,7 +57,7 @@ const eventHandler = async (_poolA, _poolB, _tokenA, _tokenB) => {
 
     if (!exchangePath) {
       console.log(`No Arbitrage Currently Available\n`);
-      console.log(`-----------------------------------------\n`);
+      console.log(`---------------------------------------------------------------------------\n`);
       isExecuting = false;
       return;
     }
@@ -66,7 +66,7 @@ const eventHandler = async (_poolA, _poolB, _tokenA, _tokenB) => {
 
     if (!isProfitable) {
       console.log(`No Arbitrage Currently Available\n`);
-      console.log(`-----------------------------------------\n`);
+      console.log(`---------------------------------------------------------------------------\n`);
       isExecuting = false;
       return;
     }
@@ -92,7 +92,6 @@ const checkPrice = async (_pools, _tokenA, _tokenB) => {
   const priceDifference = priceA.minus(priceB).div(priceB).times(100).toFixed(2);
 
   console.log(`Current Block: ${currentBlock}`);
-  console.log(`-----------------------------------------`);
   console.log(`${_pools[0].name}\t | ${_tokenB.symbol}/${_tokenA.symbol}\t | ${priceA}`);
   console.log(`${_pools[1].name}\t | ${_tokenB.symbol}/${_tokenA.symbol}\t | ${priceB}\n`);
   console.log(`Percentage Difference: ${priceDifference}%\n`);
@@ -101,7 +100,7 @@ const checkPrice = async (_pools, _tokenA, _tokenB) => {
 };
 
 const determineDirection = async (_pools, _priceDifference) => {
-  console.log(`Determining Direction...\n`);
+  console.log(`Determining Direction...`);
 
   if (_priceDifference >= PRICE_DIFFERENCE) {
     console.log(`Potential Arbitrage Direction:\n`);
@@ -119,7 +118,7 @@ const determineDirection = async (_pools, _priceDifference) => {
 };
 
 const determineProfitability = async (_exchangePath, _tokenA, _tokenB) => {
-  console.log(`Determining Profitability...\n`);
+  console.log(`Determining Profitability...`);
 
   // This is where you can customize your conditions on whether a profitable trade is possible...
 
@@ -222,7 +221,7 @@ const determineProfitability = async (_exchangePath, _tokenA, _tokenB) => {
 };
 
 const executeTrade = async (_exchangePath, _tokenA, _tokenB, _amount) => {
-  console.log(`Attempting Arbitrage...\n`);
+  console.log(`Attempting Arbitrage...`);
 
   const routerPath = [await _exchangePath[0].router.getAddress(), await _exchangePath[1].router.getAddress()];
 
