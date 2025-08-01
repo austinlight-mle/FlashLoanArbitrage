@@ -6,7 +6,7 @@
     "tokens": ["USDC", "WETH"],
     "PRICE_UNITS": 0,
     "PRICE_DIFFERENCE": 0.5,
-    "GAS_LIMIT": 600000,
+    "GAS_LIMIT": 200000,
     "GAS_PRICE": 0.00000001
   },
   "arbitrum": {
