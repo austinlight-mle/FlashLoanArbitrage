@@ -84,18 +84,17 @@ const checkPrice = async (_pools, _tokenA, _tokenB) => {
 
   const currentBlock = await provider.getBlockNumber();
 
-  const priceA = await calculatePrice(_pools[0], _tokenA, _tokenB);
-  const priceB = await calculatePrice(_pools[1], _tokenA, _tokenB);
+  const [priceA, priceB] = await Promise.all([
+    calculatePrice(_pools[0], _tokenA, _tokenB),
+    calculatePrice(_pools[1], _tokenA, _tokenB),
+  ]);
 
-  const fixedPriceA = Number(priceA);
-  const fixedPriceB = Number(priceB);
-
-  const priceDifference = (((fixedPriceA - fixedPriceB) / fixedPriceB) * 100).toFixed(2);
+  const priceDifference = priceA.minus(priceB).div(priceB).times(100).toFixed(2);
 
   console.log(`Current Block: ${currentBlock}`);
   console.log(`-----------------------------------------`);
-  console.log(`${_pools[0].name}\t | ${_tokenB.symbol}/${_tokenA.symbol}\t | ${fixedPriceA}`);
-  console.log(`${_pools[1].name}\t | ${_tokenB.symbol}/${_tokenA.symbol}\t | ${fixedPriceB}\n`);
+  console.log(`${_pools[0].name}\t | ${_tokenB.symbol}/${_tokenA.symbol}\t | ${priceA}`);
+  console.log(`${_pools[1].name}\t | ${_tokenB.symbol}/${_tokenA.symbol}\t | ${priceB}\n`);
   console.log(`Percentage Difference: ${priceDifference}%\n`);
 
   return priceDifference;

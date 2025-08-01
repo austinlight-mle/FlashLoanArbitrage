@@ -69,7 +69,7 @@ const calculatePrice = async function (_pool, _tokenA, _tokenB) {
   // Price formula (sqrtPriceX96 / 2^96) ^ 2 * 10^(decimals difference)
   const price = sqrtPrice.div(Big(2).pow(96)).pow(2).mul(conversion);
 
-  return price.toString();
+  return price;
 };
 
 const getPoolLiquidity = async function (_factory, _tokenA, _tokenB, _fee, _provider) {
