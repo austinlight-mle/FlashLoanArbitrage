@@ -2,17 +2,29 @@
   "PROJECT_SETTINGS": {
     "isLocal": false,
     "isDeployed": true,
-    "CONTRACT_ADDRESS": "0xa0742661B8E4e75b404Ae7522b9Fb4a04351Ec56",
+    "network": "ethereum",
+    "tokens": ["USDC", "WETH"],
     "PRICE_UNITS": 0,
     "PRICE_DIFFERENCE": 0.5,
     "GAS_LIMIT": 200000,
     "GAS_PRICE": 0.00000001
   },
-  "tokens": {
-    "WETH": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
-    "ARB": "0x912CE59144191C1204E64559FE8253a0e49E6548",
-    "USDC": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
-    "POOL_FEE": 500
+  "arbitrum": {
+    "Contract": "0xa0742661B8E4e75b404Ae7522b9Fb4a04351Ec56",
+    "tokens": {
+      "WETH": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+      "ARB": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+      "USDC": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+      "POOL_FEE": 500
+    }
+  },
+  "ethereum": {
+    "Contract": "0x5d298afb1bb119a96f7a4a5487c87eee5102c024",
+    "tokens": {
+      "WETH": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+      "USDC": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "POOL_FEE": 500
+    }
   },
   "UniswapV3": {
     "quoter": "0x61fFE014bA17989E743c5F6cB21bF9697530B21e",

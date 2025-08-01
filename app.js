@@ -15,9 +15,13 @@ const {
 
 const { provider, uniswap, pancakeswap, arbitrageContract } = require("./utils/initialization.js");
 
-const WETH = config.tokens.WETH;
-const ARB = config.tokens.ARB;
-const POOL_FEE = config.tokens.POOL_FEE;
+const NETWORK = config.PROJECT_SETTINGS.network;
+const TOKENS = config[NETWORK].tokens;
+
+const TOKEN_A = TOKENS[config.PROJECT_SETTINGS.tokens[0]];
+const TOKEN_B = TOKENS[config.PROJECT_SETTINGS.tokens[1]];
+
+const POOL_FEE = config[NETWORK].tokens.POOL_FEE;
 
 const UNITS = config.PROJECT_SETTINGS.PRICE_UNITS;
 const PRICE_DIFFERENCE = config.PROJECT_SETTINGS.PRICE_DIFFERENCE;
@@ -27,7 +31,7 @@ const GAS_PRICE = config.PROJECT_SETTINGS.GAS_PRICE;
 const main = async () => {
   console.log("Starting Flash Loan Arbitrage Bot...");
 
-  const { tokenA, tokenB } = await getTokenAndContract(WETH, ARB, provider);
+  const { tokenA, tokenB } = await getTokenAndContract(TOKEN_A, TOKEN_B, provider);
   const poolA = await getPoolContract(uniswap, tokenA.address, tokenB.address, POOL_FEE, provider);
   const poolB = await getPoolContract(pancakeswap, tokenA.address, tokenB.address, POOL_FEE, provider);
 
@@ -80,17 +84,17 @@ const checkPrice = async (_pools, _tokenA, _tokenB) => {
 
   const currentBlock = await provider.getBlockNumber();
 
-  const priceA = await calculatePrice(_pools[0], _tokenA, _tokenB);
-  const priceB = await calculatePrice(_pools[1], _tokenA, _tokenB);
+  const [priceA, priceB] = await Promise.all([
+    calculatePrice(_pools[0], _tokenA, _tokenB),
+    calculatePrice(_pools[1], _tokenA, _tokenB),
+  ]);
 
-  const fixedPriceA = Number(priceA).toFixed(UNITS);
-  const fixedPriceB = Number(priceB).toFixed(UNITS);
-  const priceDifference = (((fixedPriceA - fixedPriceB) / fixedPriceB) * 100).toFixed(2);
+  const priceDifference = priceA.minus(priceB).div(priceB).times(100).toFixed(2);
 
   console.log(`Current Block: ${currentBlock}`);
   console.log(`-----------------------------------------`);
-  console.log(`${_pools[0].name}\t | ${_tokenB.symbol}/${_tokenA.symbol}\t | ${fixedPriceA}`);
-  console.log(`${_pools[1].name}\t | ${_tokenB.symbol}/${_tokenA.symbol}\t | ${fixedPriceB}\n`);
+  console.log(`${_pools[0].name}\t | ${_tokenB.symbol}/${_tokenA.symbol}\t | ${priceA}`);
+  console.log(`${_pools[1].name}\t | ${_tokenB.symbol}/${_tokenA.symbol}\t | ${priceB}\n`);
   console.log(`Percentage Difference: ${priceDifference}%\n`);
 
   return priceDifference;

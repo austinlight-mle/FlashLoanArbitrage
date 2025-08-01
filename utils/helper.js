@@ -37,7 +37,7 @@ const getPoolContract = async function (_exchange, _tokenAAddress, _tokenBAddres
 
 // const calculatePrice = async function (_pool, _tokenA, _tokenB) {
 //   // Get sqrtPriceX96
-//   const [sqrtPriceX96] = await _pool.slot0();
+//   const { sqrtPriceX96 } = await _pool.slot0();
 
 //   // Get decimalDifference if there is a difference
 //   const decimalDifference = Number(Big(_tokenA.decimals - _tokenB.decimals).abs());
@@ -62,13 +62,14 @@ const calculatePrice = async function (_pool, _tokenA, _tokenB) {
   const sqrtPrice = Big(sqrtPriceX96.toString());
 
   // Adjust for decimals difference between tokens
-  const decimalDifference = Number(Big(_tokenB.decimals - _tokenA.decimals));
+  const decimalDifference = Number(Big(_tokenA.decimals - _tokenB.decimals));
+
   const conversion = Big(10).pow(decimalDifference);
 
   // Price formula (sqrtPriceX96 / 2^96) ^ 2 * 10^(decimals difference)
   const price = sqrtPrice.div(Big(2).pow(96)).pow(2).mul(conversion);
 
-  return price.toString();
+  return price;
 };
 
 const getPoolLiquidity = async function (_factory, _tokenA, _tokenB, _fee, _provider) {
