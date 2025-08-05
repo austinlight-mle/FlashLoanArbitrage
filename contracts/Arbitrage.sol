@@ -14,7 +14,7 @@ contract Arbitrage is IFlashLoanRecipient{
     struct Trade {
         address[] routerPath;
         address[] tokenPath;
-        uint24 fee;
+        uint24[] feePath;
     }
 
     constructor() {
@@ -24,11 +24,11 @@ contract Arbitrage is IFlashLoanRecipient{
     function executeTrade(
         address[] memory _routerPath,
         address[] memory _tokenPath,
-        uint24 _fee,
+        uint24[] memory _feePath,
         uint256 _flashAmount
     ) external {
         bytes memory data = abi.encode(
-            Trade({routerPath: _routerPath, tokenPath: _tokenPath, fee: _fee})
+            Trade({routerPath: _routerPath, tokenPath: _tokenPath, feePath: _feePath})
         );
 
         // Token to flash loan, by default we are flash loaning 1 token.
@@ -64,7 +64,7 @@ contract Arbitrage is IFlashLoanRecipient{
             flashAmount,
             trade.tokenPath[1],
             0,
-            trade.fee
+            trade.feePath[0]
         );
 
         // We perform the 2nd swap.
@@ -75,8 +75,8 @@ contract Arbitrage is IFlashLoanRecipient{
             trade.tokenPath[1],
             IERC20(trade.tokenPath[1]).balanceOf(address(this)),
             trade.tokenPath[0],
-            flashAmount,
-            trade.fee
+            0,
+            trade.feePath[1]
         );
 
         // Transfer back what we flash loaned

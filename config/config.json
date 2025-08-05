@@ -3,37 +3,39 @@
     "isLocal": false,
     "isDeployed": true,
     "network": "ethereum",
-    "tokens": ["USDC", "WETH"],
+    "tokens": ["DAI", "USDC"],
     "PRICE_UNITS": 0,
-    "PRICE_DIFFERENCE": 0.25,
+    "PRICE_DIFFERENCE": 0.1,
     "GAS_LIMIT": 200000,
-    "GAS_PRICE": 0.00000001
+    "GAS_PRICE": 0.00000001,
+    "BUY_FEE": 100,
+    "SELL_FEE": 100
   },
   "arbitrum": {
-    "Contract": "0xa0742661B8E4e75b404Ae7522b9Fb4a04351Ec56",
+    "Contract": "0xf9F08e80657E2E7108F725339e172eC47a0cD92C",
     "tokens": {
       "WETH": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
       "ARB": "0x912CE59144191C1204E64559FE8253a0e49E6548",
-      "USDC": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
-      "POOL_FEE": 500
+      "USDC": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831"
     }
   },
   "ethereum": {
-    "Contract": "0x5d298afb1bb119a96f7a4a5487c87eee5102c024",
+    "Contract": "0x2d830A37d9BBbdE04Fe572253598a3DA80003477",
     "tokens": {
       "WETH": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
       "USDC": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-      "POOL_FEE": 500
+      "USDT": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+      "DAI": "0x6B175474E89094C44Da98b954EedeAC495271d0F"
     }
   },
   "UniswapV3": {
-    "quoter": "0x61fFE014bA17989E743c5F6cB21bF9697530B21e",
     "factory": "0x1F98431c8aD98523631AE4a59f267346ea31F984",
+    "quoter": "0x61fFE014bA17989E743c5F6cB21bF9697530B21e",
     "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564"
   },
   "PancakeswapV3": {
-    "quoter": "0xB048Bbc1Ee6b733FFfCFb9e9CeF7375518e25997",
     "factory": "0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865",
+    "quoter": "0xB048Bbc1Ee6b733FFfCFb9e9CeF7375518e25997",
     "router": "0x1b81D678ffb9C0263b24A97847620C99d213eB14"
   }
 }
