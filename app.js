@@ -127,22 +127,44 @@ const determineProfitability = async (isAToB, _tokenA, _tokenB) => {
   try {
     const poolA = isAToB ? DEX_A : DEX_B;
     const poolB = isAToB ? DEX_B : DEX_A;
-    const buyFee = isAToB ? BUY_FEE : SELL_FEE;
-    const sellFee = isAToB ? SELL_FEE : BUY_FEE;
+    const buyFeePPM = isAToB ? BUY_FEE : SELL_FEE;
+    const sellFeePPM = isAToB ? SELL_FEE : BUY_FEE;
 
-    // Fetch liquidity from Pool A
-    const liquidity = await getPoolLiquidity(poolA.factory, _tokenA, _tokenB, buyFee, provider);
+    const buyFee = buyFeePPM / 1_000_000;
+    const sellFee = sellFeePPM / 1_000_000;
 
-    // Token B amount to buy
-    const percentage = Big(0.01);
-    const minAmount = Big(liquidity[1]).mul(percentage);
+    const MAX_SLIPPAGE = 0.005;
+
+    const netMultiplier = (1 - buyFee) * (1 + PRICE_DIFFERENCE / 100) * (1 - sellFee);
+
+    if (netMultiplier <= 1) {
+      return { isProfitable: false, amount: 0 };
+    }
+
+    const liquidityA = await getPoolLiquidity(poolA.factory, _tokenA, _tokenB, buyFeePPM, provider);
+    const liquidityB = await getPoolLiquidity(poolB.factory, _tokenA, _tokenB, sellFeePPM, provider);
+
+    // Choose correct token reserve depending on trade direction (convert from wei to Big)
+    const reserveA_tokenB = isAToB 
+      ? Big(ethers.formatUnits(liquidityA[1], _tokenB.decimals))
+      : Big(ethers.formatUnits(liquidityA[0], _tokenA.decimals));
+    const reserveB_tokenB = isAToB 
+      ? Big(ethers.formatUnits(liquidityB[1], _tokenB.decimals))
+      : Big(ethers.formatUnits(liquidityB[0], _tokenA.decimals));
+
+    // ==== 3. Calculate safe minAmount based on liquidity & slippage ====
+    const safeFromA = reserveA_tokenB.mul(MAX_SLIPPAGE); 
+    const safeFromB = reserveB_tokenB.mul(MAX_SLIPPAGE);
+    const minAmount = safeFromA.lt(safeFromB) ? safeFromA : safeFromB;
+
+    console.log(`Minimum Amount of ${_tokenB.symbol} to buy: ${minAmount.toFixed(4)}\n`);
 
     // Figure out how much token A needed for minAmount of token B...
     const quoteExactOutputSingleParams = {
       tokenIn: _tokenA.address,
       tokenOut: _tokenB.address,
-      fee: buyFee,
-      amount: BigInt(minAmount.round().toFixed(0)),
+      fee: buyFeePPM, // Use PPM value, not decimal
+      amount: ethers.parseUnits(minAmount.toFixed(_tokenB.decimals), _tokenB.decimals),
       sqrtPriceLimitX96: 0,
     };
 
@@ -154,8 +176,8 @@ const determineProfitability = async (isAToB, _tokenA, _tokenB) => {
     const quoteExactInputSingleParams = {
       tokenIn: _tokenB.address,
       tokenOut: _tokenA.address,
-      fee: sellFee,
-      amountIn: BigInt(minAmount.round().toFixed(0)),
+      fee: sellFeePPM, // Use PPM value, not decimal
+      amountIn: ethers.parseUnits(minAmount.toFixed(_tokenB.decimals), _tokenB.decimals),
       sqrtPriceLimitX96: 0,
     };
 

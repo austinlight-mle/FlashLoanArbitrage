@@ -72,13 +72,53 @@ const calculatePrice = async function (_pool, _tokenA, _tokenB) {
   return price;
 };
 
-const getPoolLiquidity = async function (_factory, _tokenA, _tokenB, _fee, _provider) {
-  const poolAddress = await getPoolAddress(_factory, _tokenA.address, _tokenB.address, _fee);
+const UNISWAP_V3_POOL_ABI = [
+  "function token0() external view returns (address)",
+  "function token1() external view returns (address)"
+];
 
-  const tokenABalance = await _tokenA.contract.balanceOf(poolAddress);
-  const tokenBBalance = await _tokenB.contract.balanceOf(poolAddress);
+const getPoolLiquidity = async function (_factory, _tokenA, _tokenB, _fee, _provider) {
+  // 1. Get pool address
+  const poolAddress = await getPoolAddress(_factory, _tokenA.address, _tokenB.address, _fee);
+  if (poolAddress === ethers.ZeroAddress) {
+    throw new Error(`❌ No pool found for ${_tokenA.symbol}/${_tokenB.symbol} at fee ${_fee}`);
+  }
+
+  // 2. Create pool contract
+  const poolContract = new ethers.Contract(poolAddress, UNISWAP_V3_POOL_ABI, _provider);
+
+  // 3. Identify token0/token1 in the pool
+  const token0Address = await poolContract.token0();
+  const token1Address = await poolContract.token1();
+
+  // 4. Get balances of token0/token1
+  const token0Balance = await (token0Address.toLowerCase() === _tokenA.address.toLowerCase()
+    ? _tokenA.contract.balanceOf(poolAddress)
+    : _tokenB.contract.balanceOf(poolAddress));
+
+  const token1Balance = await (token1Address.toLowerCase() === _tokenA.address.toLowerCase()
+    ? _tokenA.contract.balanceOf(poolAddress)
+    : _tokenB.contract.balanceOf(poolAddress));
+
+  // 5. Return balances aligned to _tokenA / _tokenB order
+  const tokenABalance = token0Address.toLowerCase() === _tokenA.address.toLowerCase()
+    ? token0Balance
+    : token1Balance;
+
+  const tokenBBalance = token0Address.toLowerCase() === _tokenB.address.toLowerCase()
+    ? token0Balance
+    : token1Balance;
 
   return [tokenABalance, tokenBBalance];
 };
+
+// const getPoolLiquidity = async function (_factory, _tokenA, _tokenB, _fee, _provider) {
+//   const poolAddress = await getPoolAddress(_factory, _tokenA.address, _tokenB.address, _fee);
+
+//   const tokenABalance = await _tokenA.contract.balanceOf(poolAddress);
+//   const tokenBBalance = await _tokenB.contract.balanceOf(poolAddress);
+
+//   return [tokenABalance, tokenBBalance];
+// };
 
 module.exports = { getTokenAndContract, getPoolAddress, getPoolContract, calculatePrice, getPoolLiquidity };
