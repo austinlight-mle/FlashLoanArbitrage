@@ -11,6 +11,7 @@ const {
   getPoolContract,
   calculatePrice,
   getPoolLiquidity,
+  sortTokens,
 } = require("./utils/helper.js");
 
 const { provider, uniswap, pancakeswap, arbitrageContract } = require("./utils/initialization.js");
@@ -21,8 +22,7 @@ const DEX_B = pancakeswap;
 const NETWORK = config.PROJECT_SETTINGS.network;
 const TOKENS = config[NETWORK].tokens;
 
-const TOKEN_A = TOKENS[config.PROJECT_SETTINGS.tokens[0]];
-const TOKEN_B = TOKENS[config.PROJECT_SETTINGS.tokens[1]];
+const [TOKEN_A, TOKEN_B] = sortTokens(TOKENS[config.PROJECT_SETTINGS.tokens[0]], TOKENS[config.PROJECT_SETTINGS.tokens[1]]);
 
 const BUY_FEE = config.PROJECT_SETTINGS.BUY_FEE;
 const SELL_FEE = config.PROJECT_SETTINGS.SELL_FEE;
@@ -96,8 +96,8 @@ const checkPrice = async (_pools, _tokenA, _tokenB) => {
   const priceDifference = priceA.minus(priceB).div(priceB).times(100).toFixed(2);
 
   console.log(`Current Block: ${currentBlock}`);
-  console.log(`${_pools[0].name}\t | ${_tokenB.symbol}/${_tokenA.symbol}\t | ${priceA}`);
-  console.log(`${_pools[1].name}\t | ${_tokenB.symbol}/${_tokenA.symbol}\t | ${priceB}\n`);
+  console.log(`${_pools[0].name}\t | ${_tokenA.symbol}/${_tokenB.symbol}\t | ${priceA}`);
+  console.log(`${_pools[1].name}\t | ${_tokenA.symbol}/${_tokenB.symbol}\t | ${priceB}\n`);
   console.log(`Percentage Difference: ${priceDifference}%\n`);
 
   return priceDifference;

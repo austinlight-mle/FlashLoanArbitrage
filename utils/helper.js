@@ -23,6 +23,12 @@ const getTokenAndContract = async function (_tokenAAdress, _tokenBAddress, _prov
   return { tokenA, tokenB };
 };
 
+const sortTokens = function (tokenA, tokenB) {
+  return tokenA.toLowerCase() < tokenB.toLowerCase()
+    ? [tokenA, tokenB]
+    : [tokenB, tokenA];
+}
+
 const getPoolAddress = async function (_factory, _tokenAAddress, _tokenBAddress, _fee) {
   const poolAddress = await _factory.getPool(_tokenAAddress, _tokenBAddress, _fee);
   return poolAddress;
@@ -121,4 +127,4 @@ const getPoolLiquidity = async function (_factory, _tokenA, _tokenB, _fee, _prov
 //   return [tokenABalance, tokenBBalance];
 // };
 
-module.exports = { getTokenAndContract, getPoolAddress, getPoolContract, calculatePrice, getPoolLiquidity };
+module.exports = { getTokenAndContract, getPoolAddress, getPoolContract, calculatePrice, getPoolLiquidity, sortTokens };
