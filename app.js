@@ -32,6 +32,41 @@ const PRICE_DIFFERENCE = config.PROJECT_SETTINGS.PRICE_DIFFERENCE;
 const GAS_LIMIT = config.PROJECT_SETTINGS.GAS_LIMIT;
 const GAS_PRICE = config.PROJECT_SETTINGS.GAS_PRICE;
 
+/**
+ * Calculate optimal trade size based on multiple factors
+ * @param {Big} reserveA - Reserve amount in pool A
+ * @param {Big} reserveB - Reserve amount in pool B  
+ * @param {number} priceDifference - Price difference percentage
+ * @param {number} totalFees - Combined buy and sell fees
+ * @param {number} maxSlippage - Maximum acceptable slippage
+ * @returns {Big} Optimal trade amount
+ */
+const calculateOptimalTradeSize = (reserveA, reserveB, priceDifference, totalFees, maxSlippage) => {
+  // 1. Base liquidity constraint - use smaller reserve to avoid excessive price impact
+  const minReserve = reserveA.lt(reserveB) ? reserveA : reserveB;
+  
+  // 2. Dynamic sizing based on price difference - larger opportunities allow larger trades
+  const priceFactor = Math.min(0.05, (priceDifference / 100) * 0.2); // Max 5%, scales with price diff
+  
+  // 3. Fee-adjusted sizing - reduce trade size for higher fees
+  const feeFactor = Math.max(0.01, 0.03 - totalFees); // Reduce size as fees increase
+  
+  // 4. Slippage protection - ensure we don't exceed slippage limits
+  const slippageFactor = Math.min(maxSlippage * 2, 0.02); // Max 2% of reserves
+  
+  // 5. Conservative multiplier for safety
+  const safetyFactor = 0.8; // Use 80% of calculated optimal size
+  
+  // Calculate final trade size using the most restrictive factor
+  const dynamicFactor = Math.min(priceFactor, feeFactor, slippageFactor) * safetyFactor;
+  const optimalSize = minReserve.mul(dynamicFactor);
+  
+  // Ensure minimum viable trade size (at least 0.1% of smaller reserve)
+  const minTradeSize = minReserve.mul(0.001);
+  
+  return optimalSize.gt(minTradeSize) ? optimalSize : minTradeSize;
+};
+
 const main = async () => {
   console.log("Starting Flash Loan Arbitrage Bot...");
 
@@ -93,7 +128,7 @@ const checkPrice = async (_pools, _tokenA, _tokenB) => {
     calculatePrice(_pools[1], _tokenA, _tokenB),
   ]);
 
-  const priceDifference = priceA.minus(priceB).div(priceB).times(100).toFixed(2);
+  const priceDifference = priceB.minus(priceA).div(priceA).times(100).toFixed(2);
 
   console.log(`Current Block: ${currentBlock}`);
   console.log(`${_pools[0].name}\t | ${_tokenA.symbol}/${_tokenB.symbol}\t | ${priceA}`);
@@ -138,10 +173,13 @@ const determineProfitability = async (isAToB, _tokenA, _tokenB) => {
     const netMultiplier = (1 - buyFee) * (1 + PRICE_DIFFERENCE / 100) * (1 - sellFee);
 
     if (netMultiplier <= 1) {
+      console.log(`Not profitable: Net Multiplier <= 1`);
       return { isProfitable: false, amount: 0 };
     }
 
     const liquidityA = await getPoolLiquidity(poolA.factory, _tokenA, _tokenB, buyFeePPM, provider);
+    
+    
     const liquidityB = await getPoolLiquidity(poolB.factory, _tokenA, _tokenB, sellFeePPM, provider);
 
     // Choose correct token reserve depending on trade direction (convert from wei to Big)
@@ -152,12 +190,16 @@ const determineProfitability = async (isAToB, _tokenA, _tokenB) => {
       ? Big(ethers.formatUnits(liquidityB[1], _tokenB.decimals))
       : Big(ethers.formatUnits(liquidityB[0], _tokenA.decimals));
 
-    // ==== 3. Calculate safe minAmount based on liquidity & slippage ====
-    const safeFromA = reserveA_tokenB.mul(MAX_SLIPPAGE); 
-    const safeFromB = reserveB_tokenB.mul(MAX_SLIPPAGE);
-    const minAmount = safeFromA.lt(safeFromB) ? safeFromA : safeFromB;
+    // ==== 3. Calculate optimal minAmount based on multiple factors ====
+    const minAmount = calculateOptimalTradeSize(
+      reserveA_tokenB, 
+      reserveB_tokenB, 
+      Math.abs(PRICE_DIFFERENCE), 
+      buyFee + sellFee,
+      MAX_SLIPPAGE
+    );
 
-    console.log(`Minimum Amount of ${_tokenB.symbol} to buy: ${minAmount.toFixed(4)}\n`);
+    console.log(`Optimal Amount of ${isAToB ? _tokenB.symbol : _tokenA.symbol} to trade: ${minAmount.toFixed(4)}\n`);
 
     // Figure out how much token A needed for minAmount of token B...
     const quoteExactOutputSingleParams = {

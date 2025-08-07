@@ -5,11 +5,11 @@
     "network": "ethereum",
     "tokens": ["USDC", "WETH"],
     "PRICE_UNITS": 0,
-    "PRICE_DIFFERENCE": 0.2,
+    "PRICE_DIFFERENCE": 0.12,
     "GAS_LIMIT": 200000,
     "GAS_PRICE": 0.00000001,
     "BUY_FEE": 100,
-    "SELL_FEE": 100
+    "SELL_FEE": 500
   },
   "arbitrum": {
     "Contract": "0xf9F08e80657E2E7108F725339e172eC47a0cD92C",
