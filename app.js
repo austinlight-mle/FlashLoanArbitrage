@@ -82,7 +82,7 @@ const main = async () => {
   poolA.on("Swap", () => eventHandler(poolA, poolB, tokenA, tokenB));
   poolB.on("Swap", () => eventHandler(poolA, poolB, tokenA, tokenB));
 
-  console.log("Waiting for swap event...\n");
+  console.log("Waiting for swap event...");
 };
 
 let isExecuting = false;
@@ -91,37 +91,36 @@ const eventHandler = async (_poolA, _poolB, _tokenA, _tokenB) => {
   if (!isExecuting) {
     isExecuting = true;
 
-    const priceDifference = await checkPrice([_poolA, _poolB], _tokenA, _tokenB);
-    const isAToB = determineDirection(priceDifference);
+    const priceData = await checkPrice([_poolA, _poolB], _tokenA, _tokenB);
 
-    if (!isAToB) {
-      console.log(`No Arbitrage Currently Available\n`);
-      console.log(`---------------------------------------------------------------------------\n`);
-      isExecuting = false;
-      return;
+    if (Math.abs(priceData.priceDifference) >= PRICE_DIFFERENCE) {
+      console.log(`Arbitrage Opportunity Detected:\n`);
+      console.log(`${_poolA.name}\t | ${_tokenA.symbol}/${_tokenB.symbol}\t | ${priceData.priceA}`);
+      console.log(`${_poolB.name}\t | ${_tokenA.symbol}/${_tokenB.symbol}\t | ${priceData.priceB}\n`);
+      console.log(`Percentage Difference: ${priceData.priceDifference}%\n`);
+
+      const isAToB = determineDirection(priceData.priceDifference);
+      const { isProfitable, amount } = await determineProfitability(isAToB, _tokenA, _tokenB);
+
+      if (!isProfitable) {
+        console.log(`This is not profitable\n`);
+        console.log(`---------------------------------------------------------------------------\n`);
+        isExecuting = false;
+        return;
+      }
+
+      const receipt = await executeTrade(isAToB, _tokenA, _tokenB, amount);
+      console.log(`Trade executed successfully:\n`);
     }
-
-    const { isProfitable, amount } = await determineProfitability(isAToB, _tokenA, _tokenB);
-
-    if (!isProfitable) {
-      console.log(`This is not profitable\n`);
-      console.log(`---------------------------------------------------------------------------\n`);
-      isExecuting = false;
-      return;
-    }
-
-    const receipt = await executeTrade(isAToB, _tokenA, _tokenB, amount);
 
     isExecuting = false;
 
-    console.log("\nWaiting for swap event...\n");
+    console.log("Waiting for swap event...");
   }
 };
 
 const checkPrice = async (_pools, _tokenA, _tokenB) => {
   console.log(`Swap Detected, Checking Price...\n`);
-
-  const currentBlock = await provider.getBlockNumber();
 
   const [priceA, priceB] = await Promise.all([
     calculatePrice(_pools[0], _tokenA, _tokenB),
@@ -130,12 +129,11 @@ const checkPrice = async (_pools, _tokenA, _tokenB) => {
 
   const priceDifference = priceB.minus(priceA).div(priceA).times(100).toFixed(2);
 
-  console.log(`Current Block: ${currentBlock}`);
-  console.log(`${_pools[0].name}\t | ${_tokenA.symbol}/${_tokenB.symbol}\t | ${priceA}`);
-  console.log(`${_pools[1].name}\t | ${_tokenA.symbol}/${_tokenB.symbol}\t | ${priceB}\n`);
-  console.log(`Percentage Difference: ${priceDifference}%\n`);
-
-  return priceDifference;
+  return {
+    priceDifference,
+    priceA,
+    priceB
+  }
 };
 
 const determineDirection = (_priceDifference) => {
@@ -162,51 +160,19 @@ const determineProfitability = async (isAToB, _tokenA, _tokenB) => {
   try {
     const poolA = isAToB ? DEX_A : DEX_B;
     const poolB = isAToB ? DEX_B : DEX_A;
-    const buyFeePPM = isAToB ? BUY_FEE : SELL_FEE;
-    const sellFeePPM = isAToB ? SELL_FEE : BUY_FEE;
-
-    const buyFee = buyFeePPM / 1_000_000;
-    const sellFee = sellFeePPM / 1_000_000;
-
-    const MAX_SLIPPAGE = 0.005;
-
-    const netMultiplier = (1 - buyFee) * (1 + PRICE_DIFFERENCE / 100) * (1 - sellFee);
-
-    if (netMultiplier <= 1) {
-      console.log(`Not profitable: Net Multiplier <= 1`);
-      return { isProfitable: false, amount: 0 };
-    }
-
-    const liquidityA = await getPoolLiquidity(poolA.factory, _tokenA, _tokenB, buyFeePPM, provider);
+    const buyFee = isAToB ? BUY_FEE : SELL_FEE;
+    const sellFee = isAToB ? SELL_FEE : BUY_FEE;
     
-    
-    const liquidityB = await getPoolLiquidity(poolB.factory, _tokenA, _tokenB, sellFeePPM, provider);
+    const liquidityA = await getPoolLiquidity(poolA.factory, _tokenA, _tokenB, buyFee, provider);
+    const percentage = Big(0.002);
+    const minAmount = Big(liquidityA[1]).mul(percentage);
 
-    // Choose correct token reserve depending on trade direction (convert from wei to Big)
-    const reserveA_tokenB = isAToB 
-      ? Big(ethers.formatUnits(liquidityA[1], _tokenB.decimals))
-      : Big(ethers.formatUnits(liquidityA[0], _tokenA.decimals));
-    const reserveB_tokenB = isAToB 
-      ? Big(ethers.formatUnits(liquidityB[1], _tokenB.decimals))
-      : Big(ethers.formatUnits(liquidityB[0], _tokenA.decimals));
-
-    // ==== 3. Calculate optimal minAmount based on multiple factors ====
-    const minAmount = calculateOptimalTradeSize(
-      reserveA_tokenB, 
-      reserveB_tokenB, 
-      Math.abs(PRICE_DIFFERENCE), 
-      buyFee + sellFee,
-      MAX_SLIPPAGE
-    );
-
-    console.log(`Optimal Amount of ${isAToB ? _tokenB.symbol : _tokenA.symbol} to trade: ${minAmount.toFixed(4)}\n`);
-
-    // Figure out how much token A needed for minAmount of token B...
+    // Figure out how much tokenA needed for X amount of tokenB...
     const quoteExactOutputSingleParams = {
       tokenIn: _tokenA.address,
       tokenOut: _tokenB.address,
-      fee: buyFeePPM, // Use PPM value, not decimal
-      amount: ethers.parseUnits(minAmount.toFixed(_tokenB.decimals), _tokenB.decimals),
+      fee: buyFee,
+      amount: BigInt(minAmount.round().toFixed(0)),
       sqrtPriceLimitX96: 0,
     };
 
@@ -214,12 +180,12 @@ const determineProfitability = async (isAToB, _tokenA, _tokenB) => {
       quoteExactOutputSingleParams
     );
 
-    // Figure out how much token A returned after swapping minAmount of token B
+    // Figure out how much tokenA returned after swapping X amount of tokenB
     const quoteExactInputSingleParams = {
       tokenIn: _tokenB.address,
       tokenOut: _tokenA.address,
-      fee: sellFeePPM, // Use PPM value, not decimal
-      amountIn: ethers.parseUnits(minAmount.toFixed(_tokenB.decimals), _tokenB.decimals),
+      fee: sellFee,
+      amountIn: BigInt(minAmount.round().toFixed(0)),
       sqrtPriceLimitX96: 0,
     };
 
@@ -237,8 +203,44 @@ const determineProfitability = async (isAToB, _tokenA, _tokenB) => {
       `Estimated amount of ${_tokenA.symbol} returned after swapping ${_tokenB.symbol} on ${poolB.name}: ${amountOut}\n`
     );
 
+    const amountDifference = amountOut - amountIn;
+    const estimatedGasCost = GAS_LIMIT * GAS_PRICE;
+
+    // Fetch account
+    const account = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
+
+    const ethBalanceBefore = ethers.formatUnits(await provider.getBalance(account.address), 18);
+    const ethBalanceAfter = ethBalanceBefore - estimatedGasCost;
+
+    const tokenABalanceBefore = Number(
+      ethers.formatUnits(await _tokenA.contract.balanceOf(account.address), _tokenA.decimals)
+    );
+    const tokenABalanceAfter = amountDifference + tokenABalanceBefore;
+    const tokenABalanceDifference = tokenABalanceAfter - tokenABalanceBefore;
+
+    const data = {
+      "ETH Balance Before": ethBalanceBefore,
+      "ETH Balance After": ethBalanceAfter,
+      "ETH Spent (gas)": estimatedGasCost,
+      "-": {},
+      [`${_tokenA.symbol} Balance BEFORE`]: tokenABalanceBefore,
+      [`${_tokenA.symbol} Balance AFTER`]: tokenABalanceAfter,
+      [`${_tokenA.symbol} Gained/Lost`]: tokenABalanceDifference,
+      "-": {},
+      "Total Gained/Lost": tokenABalanceDifference - estimatedGasCost,
+    };
+
+    console.table(data);
+    console.log();
+
+    // Setup conditions...
+
     if (Number(amountOut) < Number(amountIn)) {
       throw new Error("Not enough to pay back flash loan");
+    }
+
+    if (Number(ethBalanceAfter) < 0) {
+      throw new Error("Not enough ETH for gas fee");
     }
 
     return { isProfitable: true, amount: ethers.parseUnits(amountIn, _tokenA.decimals) };

@@ -5,7 +5,7 @@
     "network": "ethereum",
     "tokens": ["USDC", "WETH"],
     "PRICE_UNITS": 0,
-    "PRICE_DIFFERENCE": 0.12,
+    "PRICE_DIFFERENCE": 0.15,
     "GAS_LIMIT": 200000,
     "GAS_PRICE": 0.00000001,
     "BUY_FEE": 100,
