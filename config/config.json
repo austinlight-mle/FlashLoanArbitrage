@@ -5,8 +5,8 @@
     "network": "ethereum",
     "tokens": ["USDC", "WETH"],
     "PRICE_UNITS": 0,
-    "PRICE_DIFFERENCE": 0.25,
-    "GAS_LIMIT": 200000,
+    "PRICE_DIFFERENCE": 0.4,
+    "GAS_LIMIT": 100000,
     "GAS_PRICE": 0.00000001
   },
   "arbitrum": {
@@ -19,10 +19,12 @@
     }
   },
   "ethereum": {
-    "Contract": "0x5d298afb1bb119a96f7a4a5487c87eee5102c024",
+    "Contract": "0x77D514253dB33005654773aaD7835e6A7f816649",
     "tokens": {
       "WETH": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
       "USDC": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "USDT": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+      "DAI": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
       "POOL_FEE": 500
     }
   },
@@ -35,5 +37,10 @@
     "quoter": "0xB048Bbc1Ee6b733FFfCFb9e9CeF7375518e25997",
     "factory": "0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865",
     "router": "0x1b81D678ffb9C0263b24A97847620C99d213eB14"
+  },
+  "Sushiswap": {
+    "quoter": "0x61fFE014bA17989E743c5F6cB21bF9697530B21e",
+    "factory": "0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac",
+    "router": "0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F"
   }
 }

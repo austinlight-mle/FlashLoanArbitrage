@@ -122,18 +122,13 @@ const determineProfitability = async (_exchangePath, _tokenA, _tokenB) => {
 
   // This is where you can customize your conditions on whether a profitable trade is possible...
 
-  /**
-   * The helper file has quite a few functions that come in handy
-   * for performing specifc tasks.
-   */
-
   try {
     // Fetch liquidity off of the exchange to buy token1 from
     const liquidity = await getPoolLiquidity(_exchangePath[0].factory, _tokenA, _tokenB, POOL_FEE, provider);
 
     // An example of using a percentage of the liquidity
     // BigInt doesn't like decimals, so we use Big.js here
-    const percentage = Big(0.1);
+    const percentage = Big(0.0002);
     const minAmount = Big(liquidity[1]).mul(percentage);
 
     // Figure out how much tokenA needed for X amount of tokenB...
@@ -150,20 +145,22 @@ const determineProfitability = async (_exchangePath, _tokenA, _tokenB) => {
     );
 
     // Figure out how much tokenA returned after swapping X amount of tokenB
-    const quoteExactInputSingleParams = {
-      tokenIn: _tokenB.address,
-      tokenOut: _tokenA.address,
-      fee: POOL_FEE,
-      amountIn: BigInt(minAmount.round().toFixed(0)),
-      sqrtPriceLimitX96: 0,
-    };
+    // const quoteExactInputSingleParams = {
+    //   tokenIn: _tokenB.address,
+    //   tokenOut: _tokenA.address,
+    //   fee: POOL_FEE,
+    //   amountIn: BigInt(minAmount.round().toFixed(0)),
+    //   sqrtPriceLimitX96: 0,
+    // };
 
-    const [tokenAReturned] = await _exchangePath[1].quoter.quoteExactInputSingle.staticCall(
-      quoteExactInputSingleParams
-    );
+    // const [tokenAReturned] = await _exchangePath[1].quoter.quoteExactInputSingle.staticCall(
+    //   quoteExactInputSingleParams
+    // );
 
     const amountIn = ethers.formatUnits(tokenANeeded, _tokenA.decimals);
-    const amountOut = ethers.formatUnits(tokenAReturned, _tokenA.decimals);
+    // const amountOut = ethers.formatUnits(tokenAReturned, _tokenA.decimals);
+
+    return { isProfitable: true, amount: ethers.parseUnits(amountIn, _tokenA.decimals) };
 
     console.log(
       `Estimated amount of ${_tokenA.symbol} needed to buy ${_tokenB.symbol} on ${_exchangePath[0].name}: ${amountIn}`
