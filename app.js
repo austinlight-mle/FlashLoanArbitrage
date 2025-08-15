@@ -22,50 +22,17 @@ const DEX_B = pancakeswap;
 const NETWORK = config.PROJECT_SETTINGS.network;
 const TOKENS = config[NETWORK].tokens;
 
-const [TOKEN_A, TOKEN_B] = sortTokens(TOKENS[config.PROJECT_SETTINGS.tokens[0]], TOKENS[config.PROJECT_SETTINGS.tokens[1]]);
+const [TOKEN_A, TOKEN_B] = sortTokens(
+  TOKENS[config.PROJECT_SETTINGS.tokens[0]],
+  TOKENS[config.PROJECT_SETTINGS.tokens[1]]
+);
 
 const BUY_FEE = config.PROJECT_SETTINGS.BUY_FEE;
 const SELL_FEE = config.PROJECT_SETTINGS.SELL_FEE;
 
-const UNITS = config.PROJECT_SETTINGS.PRICE_UNITS;
 const PRICE_DIFFERENCE = config.PROJECT_SETTINGS.PRICE_DIFFERENCE;
 const GAS_LIMIT = config.PROJECT_SETTINGS.GAS_LIMIT;
 const GAS_PRICE = config.PROJECT_SETTINGS.GAS_PRICE;
-
-/**
- * Calculate optimal trade size based on multiple factors
- * @param {Big} reserveA - Reserve amount in pool A
- * @param {Big} reserveB - Reserve amount in pool B  
- * @param {number} priceDifference - Price difference percentage
- * @param {number} totalFees - Combined buy and sell fees
- * @param {number} maxSlippage - Maximum acceptable slippage
- * @returns {Big} Optimal trade amount
- */
-const calculateOptimalTradeSize = (reserveA, reserveB, priceDifference, totalFees, maxSlippage) => {
-  // 1. Base liquidity constraint - use smaller reserve to avoid excessive price impact
-  const minReserve = reserveA.lt(reserveB) ? reserveA : reserveB;
-  
-  // 2. Dynamic sizing based on price difference - larger opportunities allow larger trades
-  const priceFactor = Math.min(0.05, (priceDifference / 100) * 0.2); // Max 5%, scales with price diff
-  
-  // 3. Fee-adjusted sizing - reduce trade size for higher fees
-  const feeFactor = Math.max(0.01, 0.03 - totalFees); // Reduce size as fees increase
-  
-  // 4. Slippage protection - ensure we don't exceed slippage limits
-  const slippageFactor = Math.min(maxSlippage * 2, 0.02); // Max 2% of reserves
-  
-  // 5. Conservative multiplier for safety
-  const safetyFactor = 0.8; // Use 80% of calculated optimal size
-  
-  // Calculate final trade size using the most restrictive factor
-  const dynamicFactor = Math.min(priceFactor, feeFactor, slippageFactor) * safetyFactor;
-  const optimalSize = minReserve.mul(dynamicFactor);
-  
-  // Ensure minimum viable trade size (at least 0.1% of smaller reserve)
-  const minTradeSize = minReserve.mul(0.001);
-  
-  return optimalSize.gt(minTradeSize) ? optimalSize : minTradeSize;
-};
 
 const main = async () => {
   console.log("Starting Flash Loan Arbitrage Bot...");
@@ -92,12 +59,12 @@ const eventHandler = async (_poolA, _poolB, _tokenA, _tokenB) => {
     isExecuting = true;
 
     const priceData = await checkPrice([_poolA, _poolB], _tokenA, _tokenB);
+    console.log(`Percentage Difference: ${priceData.priceDifference}%\n`);
 
     if (Math.abs(priceData.priceDifference) >= PRICE_DIFFERENCE) {
-      console.log(`Arbitrage Opportunity Detected:\n`);
+      console.log(`Arbitrage Opportunity Detected:`);
       console.log(`${_poolA.name}\t | ${_tokenA.symbol}/${_tokenB.symbol}\t | ${priceData.priceA}`);
       console.log(`${_poolB.name}\t | ${_tokenA.symbol}/${_tokenB.symbol}\t | ${priceData.priceB}\n`);
-      console.log(`Percentage Difference: ${priceData.priceDifference}%\n`);
 
       const isAToB = determineDirection(priceData.priceDifference);
       const { isProfitable, amount } = await determineProfitability(isAToB, _tokenA, _tokenB);
@@ -120,7 +87,7 @@ const eventHandler = async (_poolA, _poolB, _tokenA, _tokenB) => {
 };
 
 const checkPrice = async (_pools, _tokenA, _tokenB) => {
-  console.log(`Swap Detected, Checking Price...\n`);
+  console.log(`Swap Detected, Checking Price...`);
 
   const [priceA, priceB] = await Promise.all([
     calculatePrice(_pools[0], _tokenA, _tokenB),
@@ -132,25 +99,23 @@ const checkPrice = async (_pools, _tokenA, _tokenB) => {
   return {
     priceDifference,
     priceA,
-    priceB
-  }
+    priceB,
+  };
 };
 
 const determineDirection = (_priceDifference) => {
   console.log(`Determining Direction...`);
 
-  if (_priceDifference >= PRICE_DIFFERENCE) {
+  if (_priceDifference <= -PRICE_DIFFERENCE) {
     console.log(`Potential Arbitrage Direction:\n`);
     console.log(`Buy\t -->\t ${DEX_A.name}`);
     console.log(`Sell\t -->\t ${DEX_B.name}\n`);
     return true;
-  } else if (_priceDifference <= -PRICE_DIFFERENCE) {
+  } else if (_priceDifference >= PRICE_DIFFERENCE) {
     console.log(`Potential Arbitrage Direction:\n`);
     console.log(`Buy\t -->\t ${DEX_B.name}`);
     console.log(`Sell\t -->\t ${DEX_A.name}\n`);
     return false;
-  } else {
-    return null;
   }
 };
 
@@ -162,10 +127,16 @@ const determineProfitability = async (isAToB, _tokenA, _tokenB) => {
     const poolB = isAToB ? DEX_B : DEX_A;
     const buyFee = isAToB ? BUY_FEE : SELL_FEE;
     const sellFee = isAToB ? SELL_FEE : BUY_FEE;
-    
+
     const liquidityA = await getPoolLiquidity(poolA.factory, _tokenA, _tokenB, buyFee, provider);
-    const percentage = Big(0.002);
-    const minAmount = Big(liquidityA[1]).mul(percentage);
+    const liquidityB = await getPoolLiquidity(poolB.factory, _tokenA, _tokenB, sellFee, provider);
+
+    console.log(`Amount of ${_tokenB.symbol} in ${poolA.name}: ${liquidityA[1]}`);
+
+    const percentage = Big(0.05);
+    const minAmount = Big((liquidityA[1] < liquidityB[1] ? liquidityA[1] : liquidityB[1]).toString()).mul(
+      percentage
+    );
 
     // Figure out how much tokenA needed for X amount of tokenB...
     const quoteExactOutputSingleParams = {
@@ -176,9 +147,10 @@ const determineProfitability = async (isAToB, _tokenA, _tokenB) => {
       sqrtPriceLimitX96: 0,
     };
 
-    const [tokenANeeded] = await poolA.quoter.quoteExactOutputSingle.staticCall(
-      quoteExactOutputSingleParams
-    );
+    const [tokenANeeded] = await poolA.quoter.quoteExactOutputSingle.staticCall(quoteExactOutputSingleParams);
+
+    const amountIn = ethers.formatUnits(tokenANeeded, _tokenA.decimals);
+    return { isProfitable: true, amount: ethers.parseUnits(amountIn, _tokenA.decimals) };
 
     // Figure out how much tokenA returned after swapping X amount of tokenB
     const quoteExactInputSingleParams = {
@@ -189,11 +161,9 @@ const determineProfitability = async (isAToB, _tokenA, _tokenB) => {
       sqrtPriceLimitX96: 0,
     };
 
-    const [tokenAReturned] = await poolB.quoter.quoteExactInputSingle.staticCall(
-      quoteExactInputSingleParams
-    );
+    const [tokenAReturned] = await poolB.quoter.quoteExactInputSingle.staticCall(quoteExactInputSingleParams);
 
-    const amountIn = ethers.formatUnits(tokenANeeded, _tokenA.decimals);
+    // const amountIn = ethers.formatUnits(tokenANeeded, _tokenA.decimals);
     const amountOut = ethers.formatUnits(tokenAReturned, _tokenA.decimals);
 
     console.log(
@@ -246,7 +216,6 @@ const determineProfitability = async (isAToB, _tokenA, _tokenB) => {
     return { isProfitable: true, amount: ethers.parseUnits(amountIn, _tokenA.decimals) };
   } catch (error) {
     console.log(error);
-    console.log("");
     return { isProfitable: false, amount: 0 };
   }
 };

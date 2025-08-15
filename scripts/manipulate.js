@@ -6,29 +6,24 @@ const { getTokenAndContract, getPoolContract, calculatePrice } = require("../uti
 const { provider, uniswap, pancakeswap } = require("../utils/initialization.js");
 
 // -- CONFIGURE VALUES HERE -- //
-const EXCHANGE_TO_USE = pancakeswap;
+const EXCHANGE_TO_USE = uniswap;
 
-const UNLOCKED_ACCOUNT = "0xB38e8c17e38363aF6EbdCb3dAE12e0243582891D"; // Account to impersonate
+const UNLOCKED_ACCOUNT = "0x0044f127511830bf4483db87adde07e843e2c66b"; // Account to impersonate
 const AMOUNT = "100000"; // Amount of tokens to swap
+
+const TOKEN_A = config.ethereum.tokens.WETH;
+const TOKEN_B = config.ethereum.tokens.USDC;
+
+const POOL_FEE = config.PROJECT_SETTINGS.BUY_FEE;
 
 async function main() {
   // Fetch contracts
-  const { tokenA: ARB, tokenB: WETH } = await getTokenAndContract(
-    config.tokens.ARB,
-    config.tokens.WETH,
-    provider
-  );
+  const { tokenA: WETH, tokenB: USDC } = await getTokenAndContract(TOKEN_A, TOKEN_B, provider);
 
-  const pool = await getPoolContract(
-    EXCHANGE_TO_USE,
-    ARB.address,
-    WETH.address,
-    config.tokens.POOL_FEE,
-    provider
-  );
+  const pool = await getPoolContract(EXCHANGE_TO_USE, WETH.address, USDC.address, POOL_FEE, provider);
 
-  // Fetch price of SHIB/WETH before we execute the swap
-  const priceBefore = await calculatePrice(pool, ARB, WETH);
+  // Fetch price of USDC/WETH before we execute the swap
+  const priceBefore = await calculatePrice(pool, WETH, USDC);
 
   // Send ETH to account to ensure they have enough ETH to create the transaction
   await (
@@ -38,14 +33,14 @@ async function main() {
     value: hre.ethers.parseUnits("1", 18),
   });
 
-  await manipulatePrice([ARB, WETH]);
+  await manipulatePrice([WETH, USDC]);
 
-  // Fetch price of SHIB/WETH after the swap
-  const priceAfter = await calculatePrice(pool, ARB, WETH);
+  // Fetch price of WETH/USDC after the swap
+  const priceAfter = await calculatePrice(pool, WETH, USDC);
 
   const data = {
-    "Price Before": `1 ${WETH.symbol} = ${Number(priceBefore).toFixed(0)} ${ARB.symbol}`,
-    "Price After": `1 ${WETH.symbol} = ${Number(priceAfter).toFixed(0)} ${ARB.symbol}`,
+    "Price Before": `1 ${WETH.symbol} = ${Number(priceBefore).toFixed(0)} ${USDC.symbol}`,
+    "Price After": `1 ${WETH.symbol} = ${Number(priceAfter).toFixed(0)} ${USDC.symbol}`,
   };
 
   console.table(data);
@@ -57,7 +52,7 @@ async function manipulatePrice(_path) {
   console.log(`Input Token: ${_path[0].symbol}`);
   console.log(`Output Token: ${_path[1].symbol}\n`);
 
-  const fee = config.tokens.POOL_FEE;
+  const fee = POOL_FEE;
   const amount = hre.ethers.parseUnits(AMOUNT, _path[0].decimals);
   const deadline = Math.floor(Date.now() / 1000) + 60 * 20; // 20 minutes
 

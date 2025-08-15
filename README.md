@@ -48,6 +48,7 @@ Copy the private key of the first account provided from the hardhat node, and pa
 
 In a separate terminal run:
 `npx hardhat ignition deploy ignition/modules/Arbitrage.js --network localhost`
+0x2d830A37d9BBbdE04Fe572253598a3DA80003477
 
 Sometimes the deployed address may be different when testing, and therefore you'll need to update the **ARBITRAGE_ADDRESS** inside of the _config.json_
 
